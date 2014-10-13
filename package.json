@@ -1,0 +1,15 @@
+{
+  "name": "meshblu-wemo",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node command.js"
+  },
+  "dependencies": {
+    "skynet": "^1.1.1",
+    "wemo": "^0.1.1"
+  },
+  "keywords": [
+    "meshblu-connector",
+    "gateblu"
+  ]
+}
