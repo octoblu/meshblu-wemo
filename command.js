@@ -16,13 +16,15 @@ var plugin = new Plugin();
 
 conx.on('ready', function(){
   conx.whoami({uuid: config.uuid}, function(device){
-    plugin.setOptions(device.options);
-  });
-  conx.update({
-    uuid: config.uuid,
-    token: config.token,
-    messageSchema: plugin.messageSchema,
-    optionsSchema: plugin.optionsSchema
+    plugin.setOptions(device.options || {});
+
+    conx.update({
+      uuid: config.uuid,
+      token: config.token,
+      messageSchema: plugin.messageSchema,
+      optionsSchema: plugin.optionsSchema,
+      options:       plugin.options
+    });
   });
 });
 
