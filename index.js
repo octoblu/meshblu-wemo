@@ -32,6 +32,18 @@ util.inherits(Plugin, EventEmitter);
 
 Plugin.prototype.onMessage = function(message){
   var payload = message.payload;
+  this.updateWemo(payload);
+};
+
+Plugin.prototype.onConfig = function(device){
+  this.setOptions(device.options||{});
+};
+
+Plugin.prototype.setOptions = function(options){
+  this.options = options;
+};
+
+Plugin.prototype.updateWemo = function(payload);
   var self = this;
 
   WeMo.Search(this.options.friendlyName, function(err, device) {
@@ -52,10 +64,6 @@ Plugin.prototype.onMessage = function(message){
       }
     });
   });
-};
-
-Plugin.prototype.setOptions = function(options){
-  this.options = options;
 };
 
 module.exports = {
