@@ -43,7 +43,7 @@ Plugin.prototype.setOptions = function(options){
   this.options = options;
 };
 
-Plugin.prototype.updateWemo = function(payload);
+Plugin.prototype.updateWemo = function(payload){
   var self = this;
 
   WeMo.Search(this.options.friendlyName, function(err, device) {
