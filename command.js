@@ -9,6 +9,7 @@ var conx = skynet.createConnection({
   token  : config.token
 });
 
+process.on('uncaughtException', console.error);
 conx.on('notReady', console.error);
 conx.on('error', console.error);
 

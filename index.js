@@ -1,6 +1,7 @@
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var WeMo = require('wemo');
+var _ = require('lodash');
 
 var MESSAGE_SCHEMA = {
   type: 'object',
@@ -41,18 +42,42 @@ Plugin.prototype.onConfig = function(device){
 
 Plugin.prototype.setOptions = function(options){
   this.options = options;
+  this._wemo = null;
+  this.getWemo();
 };
 
-Plugin.prototype.updateWemo = function(payload);
+Plugin.prototype.getWemo = function(callback) {
   var self = this;
+  callback = callback || _.noop;
 
-  WeMo.Search(this.options.friendlyName, function(err, device) {
+  if (self._wemo) {
+    _.defer(function(){
+      callback(null, self._wemo);
+    });
+    return;
+  }
+
+  WeMo.Search(self.options.friendlyName, function(err, device) {
     if (err) {
-      self.emit('error', err);
+      self._wemo = null;
+      callback(err);
       return;
     }
 
-    var wemoSwitch = new WeMo(device.ip, device.port);
+    self._wemo = new WeMo(device.ip, device.port);
+    callback(null, self._wemo);
+  });
+};
+
+Plugin.prototype.updateWemo = function(payload) {
+  var self = this;
+
+  self.getWemo(function(error, wemoSwitch) {
+    if (error) {
+      self.emit('error', error);
+      return;
+    }
+
     var binaryState = 0;
     if(payload.on){
       binaryState = 1;
