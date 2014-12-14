@@ -1,7 +1,8 @@
-var util = require('util');
+var util         = require('util');
 var EventEmitter = require('events').EventEmitter;
-var WeMo = require('wemo');
-var _ = require('lodash');
+var WeMo         = require('wemo');
+var debug        = require('debug')('meshblu-wemo:index');
+var _            = require('lodash');
 
 var MESSAGE_SCHEMA = {
   type: 'object',
@@ -46,7 +47,7 @@ Plugin.prototype.setOptions = function(options){
   this.getWemo();
 };
 
-Plugin.prototype.getWemo = function(callback) {
+var getWemoImmediate = function(callback) {
   var self = this;
   callback = callback || _.noop;
 
@@ -57,17 +58,23 @@ Plugin.prototype.getWemo = function(callback) {
     return;
   }
 
+  debug('Searching for ' + self.options.friendlyName);
+  WeMo.SearchTimeout = 10000;
   WeMo.Search(self.options.friendlyName, function(err, device) {
     if (err) {
       self._wemo = null;
+      debug('Error: ' + err);
       callback(err);
       return;
     }
 
+    debug('Found ' + self.options.friendlyName + ' at ' + device.ip + ':' + device.port);
     self._wemo = new WeMo(device.ip, device.port);
     callback(null, self._wemo);
   });
 };
+
+Plugin.prototype.getWemo = _.debounce(getWemoImmediate, 1000);
 
 Plugin.prototype.updateWemo = function(payload) {
   var self = this;
@@ -82,6 +89,7 @@ Plugin.prototype.updateWemo = function(payload) {
     if(payload.on){
       binaryState = 1;
     }
+    debug('Setting ' + self.options.friendlyName + ' to ' + binaryState);
     wemoSwitch.setBinaryState(binaryState, function(err, result) {
       if (err){
         self.emit('error', err);
