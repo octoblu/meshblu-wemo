@@ -60,11 +60,12 @@ var getWemoImmediate = function(callback) {
 
   debug('Searching for ' + self.options.friendlyName);
   WeMo.SearchTimeout = 10000;
-  WeMo.Search(self.options.friendlyName, function(err, device) {
-    if (err) {
+  WeMo.Search(self.options.friendlyName, function(error, device) {
+    if (error) {
       self._wemo = null;
-      debug('Error: ' + err);
-      callback(err);
+      console.error(error);
+      debug('Error: ' + error);
+      callback(error);
       return;
     }
 
@@ -81,6 +82,8 @@ Plugin.prototype.updateWemo = function(payload) {
 
   self.getWemo(function(error, wemoSwitch) {
     if (error) {
+      debug('Error: ', error);
+      console.error(error);
       self.emit('error', error);
       return;
     }
@@ -90,9 +93,11 @@ Plugin.prototype.updateWemo = function(payload) {
       binaryState = 1;
     }
     debug('Setting ' + self.options.friendlyName + ' to ' + binaryState);
-    wemoSwitch.setBinaryState(binaryState, function(err, result) {
-      if (err){
-        self.emit('error', err);
+    wemoSwitch.setBinaryState(binaryState, function(error, result) {
+      if (error){
+        debug('Error: ', error);
+        console.error(error);
+        self.emit('error', error);
         return;
       }
     });
