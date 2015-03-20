@@ -20,6 +20,11 @@ var OPTIONS_SCHEMA = {
     friendlyName: {
       type: 'string',
       required: true
+    },
+    searchTimeout: {
+      type: 'number',
+      required: true,
+      default: 10000
     }
   }
 };
@@ -59,7 +64,7 @@ var getWemoImmediate = function(callback) {
   }
 
   debug('Searching for ' + self.options.friendlyName);
-  WeMo.SearchTimeout = 10000;
+  WeMo.SearchTimeout = self.options.searchTimeout || 10000;
   WeMo.Search(self.options.friendlyName, function(error, device) {
     if (error) {
       self._wemo = null;
