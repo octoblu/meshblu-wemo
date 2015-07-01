@@ -90,7 +90,6 @@ Connector.prototype.run = function(){
 Connector.prototype.consoleError = function(error){
   var self = this;
   self.emit('error', error);
-  console.error(error);
 };
 
 module.exports = Connector;
