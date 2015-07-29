@@ -30,36 +30,38 @@ var OPTIONS_SCHEMA = {
 };
 
 function Plugin(){
-  this.options = {};
-  this.messageSchema = MESSAGE_SCHEMA;
-  this.optionsSchema = OPTIONS_SCHEMA;
-  return this;
+  var self = this;
+  self.options = {};
+  self.messageSchema = MESSAGE_SCHEMA;
+  self.optionsSchema = OPTIONS_SCHEMA;
+  return self;
 }
 util.inherits(Plugin, EventEmitter);
 
 Plugin.prototype.onMessage = function(message){
-  var payload = message.payload;
-  this.updateWemo(payload);
+  var self = this;
+  var payload = message.payload || {};
+  self.updateWemo(payload);
 };
 
 Plugin.prototype.onConfig = function(device){
-  this.setOptions(device.options||{});
+  var self = this;
+  self.setOptions(device.options||{});
 };
 
 Plugin.prototype.setOptions = function(options){
-  this.options = options;
-  this._wemo = null;
-  this.getWemo();
+  var self = this;
+  self.options = _.defaults(options, {friendlyName: '', searchTimeout: 10000});
+  self.options.friendlyName = self.options.friendlyName.trim();
+  self.getWemo();
 };
 
 var getWemoImmediate = function(callback) {
   var self = this;
   callback = callback || _.noop;
 
-  if (self._wemo) {
-    _.defer(function(){
-      callback(null, self._wemo);
-    });
+  if (self._wemo && self._wemoName === self.options.friendlyName) {
+    _.defer(callback, null, self._wemo);
     return;
   }
 
@@ -68,28 +70,39 @@ var getWemoImmediate = function(callback) {
   WeMo.Search(self.options.friendlyName, function(error, device) {
     if (error) {
       self._wemo = null;
+      self._wemoName = null;
       console.error(error);
-      debug('Error: ' + error);
-      callback(error);
+      self.sendError(error);
       return;
     }
 
     debug('Found ' + self.options.friendlyName + ' at ' + device.ip + ':' + device.port);
     self._wemo = new WeMo(device.ip, device.port);
+    self._wemoName = self.options.friendlyName;
     callback(null, self._wemo);
   });
 };
 
 Plugin.prototype.getWemo = _.debounce(getWemoImmediate, 1000);
 
+Plugin.prototype.sendError = function(error){
+  var self = this;
+  self.emit('message', {
+    devices: ['*'],
+    topic: 'error',
+    payload: {
+      error: error
+    }
+  });
+}
+
 Plugin.prototype.updateWemo = function(payload) {
   var self = this;
-
+  payload = _.defaults(payload, {on: true});
   self.getWemo(function(error, wemoSwitch) {
     if (error) {
-      debug('Error: ', error);
       console.error(error);
-      self.emit('error', error);
+      self.sendError(error);
       return;
     }
 
@@ -100,9 +113,8 @@ Plugin.prototype.updateWemo = function(payload) {
     debug('Setting ' + self.options.friendlyName + ' to ' + binaryState);
     wemoSwitch.setBinaryState(binaryState, function(error, result) {
       if (error){
-        debug('Error: ', error);
         console.error(error);
-        self.emit('error', error);
+        self.sendError(error);
         return;
       }
     });

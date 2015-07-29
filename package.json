@@ -1,7 +1,7 @@
 {
   "name": "meshblu-wemo",
   "repository": "octoblu/meshblu-wemo",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "main": "connector.js",
   "scripts": {
     "preinstall": "node -e \"try{require('./skip-install.js')}catch(e){}\"",
@@ -12,7 +12,7 @@
     "debug": "^2.1.0",
     "lodash": "^3.9.3",
     "meshblu": "^1.30.0",
-    "wemo": "https://github.com/octoblu/node-wemo/archive/master.tar.gz#6b6e4a00df62949724ef3a5bd040ccc1b243cee9"
+    "wemo": "^0.2.1"
   },
   "bundledDependencies": [
     "request",
