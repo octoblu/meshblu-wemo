@@ -1,8 +1,11 @@
 'use strict';
-var Plugin = require('./index').Plugin;
-var util = require('util');
+var Plugin       = require('./index').Plugin;
+var util         = require('util');
 var EventEmitter = require('events').EventEmitter;
-var meshblu = require('meshblu');
+var meshblu      = require('meshblu');
+var packageJSON  = require('./package.json');
+var _            = require('lodash');
+
 var bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }
 
 var Connector = function(config){
@@ -13,8 +16,14 @@ var Connector = function(config){
   self.onMessage = bind(self.onMessage, self);
   self.onConfig = bind(self.onConfig, self);
   self.run = bind(self.run, self);
-  self.consoleError = bind(self.consoleError, self);
-  process.on('uncaughtException', self.consoleError);
+  self.emitError = bind(self.emitError, self);
+  if(!process){
+    return;
+  }
+  process.on('uncaughtException', function(error){
+    self.emitError(error);
+    process.exit(1);
+  });
   return self;
 };
 
@@ -28,8 +37,8 @@ Connector.prototype.createConnection = function(){
     uuid   : self.config.uuid,
     token  : self.config.token
   });
-  self.conx.on('notReady', self.consoleError);
-  self.conx.on('error', self.consoleError);
+  self.conx.on('notReady', self.emitError);
+  self.conx.on('error', self.emitError);
 
   self.conx.on('ready', self.onReady);
   self.conx.on('message', self.onMessage);
@@ -42,7 +51,7 @@ Connector.prototype.onConfig = function(device){
   try{
     self.plugin.onConfig.apply(self.plugin, arguments);
   }catch(error){
-    self.consoleError(error);
+    self.emitError(error);
   }
 };
 
@@ -52,7 +61,7 @@ Connector.prototype.onMessage = function(message){
   try{
     self.plugin.onMessage.apply(self.plugin, arguments);
   }catch(error){
-    self.consoleError(error);
+    self.emitError(error);
   }
 };
 
@@ -60,12 +69,17 @@ Connector.prototype.onReady = function(){
   var self = this;
   self.conx.whoami({uuid: self.config.uuid}, function(device){
     self.plugin.setOptions(device.options || {});
+    var oldRecentVersions = device.recentVersions || [];
+    var recentVersions = _.union(oldRecentVersions, [packageJSON.version]);
     self.conx.update({
-      uuid: self.config.uuid,
-      token: self.config.token,
+      uuid:          self.config.uuid,
+      token:         self.config.token,
       messageSchema: self.plugin.messageSchema,
       optionsSchema: self.plugin.optionsSchema,
-      options: self.plugin.options
+      options:       self.plugin.options,
+      initializing:  false,
+      currentVersion: packageJSON.version,
+      recentVersions: recentVersions
     });
   });
 };
@@ -79,7 +93,12 @@ Connector.prototype.run = function(){
     self.conx.data(data);
   });
 
-  self.plugin.on('error', self.consoleError);
+  self.plugin.on('error', self.emitError);
+
+  self.plugin.on('update', function(properties){
+    self.emit('update', properties);
+    self.conx.update(properties);
+  });
 
   self.plugin.on('message', function(message){
     self.emit('message.send', message);
@@ -87,7 +106,7 @@ Connector.prototype.run = function(){
   });
 };
 
-Connector.prototype.consoleError = function(error){
+Connector.prototype.emitError = function(error){
   var self = this;
   self.emit('error', error);
 };
