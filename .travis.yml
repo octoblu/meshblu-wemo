@@ -3,13 +3,35 @@ node_js:
 - '0.10'
 before_install:
   - npm install npm -g
+before_deploy:
+  - npm install ws browserify coffeeify
+  - mkdir -p deploy/meshblu-wemo/latest
+  - mkdir -p deploy/meshblu-wemo/$TRAVIS_TAG
+  - node_modules/.bin/browserify -t coffeeify -s Connector connector.js > deploy/meshblu-wemo/latest/meshblu-wemo.js
+  - gzip deploy/meshblu-wemo/latest/meshblu-wemo.js
+  - mv deploy/meshblu-wemo/latest/meshblu-wemo.js.gz deploy/meshblu-wemo/latest/meshblu-wemo.js
+  - cp deploy/meshblu-wemo/latest/meshblu-wemo.js deploy/meshblu-wemo/$TRAVIS_TAG/meshblu-wemo.js
 deploy:
-  - provider: npm
-    skip_cleanup: true
-    clean_up: false
-    email: serveradmin@octoblu.com
-    api_key:
-      secure: "IilY8cQTAZdowPoYHaXZGIpHPvNAKMNtAmR25uG+0YldDb7f0FMYMVxgqax9pda4Q8dUenKCm+TTKUIrnR5uuggykCUZWief7+jphw+h4uXeWyoS+kPi85zzKx7P58xZeYzAIOgPvEThVHAfCXr9+codWzmFELwVzh4AgcnvsrY="
-    on:
-      tags: true
-      all_branches: true
+- provider: npm
+  skip_cleanup: true
+  clean_up: false
+  email: serveradmin@octoblu.com
+  api_key:
+    secure: "IilY8cQTAZdowPoYHaXZGIpHPvNAKMNtAmR25uG+0YldDb7f0FMYMVxgqax9pda4Q8dUenKCm+TTKUIrnR5uuggykCUZWief7+jphw+h4uXeWyoS+kPi85zzKx7P58xZeYzAIOgPvEThVHAfCXr9+codWzmFELwVzh4AgcnvsrY="
+  on:
+    tags: true
+    all_branches: true
+- provider: s3
+  access_key_id: AKIAJH2D5IPIRHYJT5IA
+  secret_access_key:
+    secure: "CiblIPUh2R1ZLiaAV0oV20rtPYB7JnP2GmQ6jKSmiEhJR5sYBvNl9onDPfwp8KeJvN83TJJY2dl27nX/CNG6QO1nmT2W+hpfckLHRTUqoHN03bKxDC2tHtcRnRzl4nLPNMpt/FTpI7GnXBrjwegZif1b1JQgmKcztQHlbfJtDEU="
+  bucket: octoblu-cdn
+  region: us-west-2
+  skip_cleanup: true
+  detect_encoding: true
+  local-dir: deploy
+  upload-dir: js
+  on:
+    tags: true
+    all_branches: true
+    node: '0.10'
