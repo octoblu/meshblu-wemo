@@ -1,7 +1,7 @@
 {
   "name": "meshblu-wemo",
   "repository": "octoblu/meshblu-wemo",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "main": "connector.js",
   "scripts": {
     "preinstall": "node -e \"try{require('./skip-install.js')}catch(e){}\"",
